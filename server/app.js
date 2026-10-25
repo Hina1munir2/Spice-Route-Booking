@@ -6,7 +6,21 @@ const mongoose = require("mongoose");
 const app = express();
 const routes = require("./routes");
 
-app.use(cors());
+// Do not disclose Express through the X-Powered-By header.
+app.disable("x-powered-by");
+
+// Allow only the configured frontend origin.
+const allowedOrigin =
+  process.env.CLIENT_URL || "http://localhost:3000";
+
+app.use(
+  cors({
+    origin: allowedOrigin,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
 app.use(express.json({ limit: "10kb" }));
 app.use("/", routes);
 
@@ -18,14 +32,6 @@ app.get("/", (req, res) => {
       mongoose.connection.readyState === 1
         ? "connected"
         : "disconnected",
-  });
-});
-
-// Handle unknown endpoints.
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "API endpoint not found.",
   });
 });
 
@@ -53,6 +59,14 @@ app.use((error, req, res, next) => {
   return res.status(500).json({
     success: false,
     message: "An unexpected server error occurred.",
+  });
+});
+
+// Handle unknown endpoints.
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API endpoint not found.",
   });
 });
 
