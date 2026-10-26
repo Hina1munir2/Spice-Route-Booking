@@ -1,4 +1,3 @@
-
 const request = require("supertest");
 
 jest.mock("../models/Service");
@@ -34,6 +33,52 @@ describe("Spice Route Booking API", () => {
     expect(response.body.success).toBe(true);
     expect(response.body.count).toBe(1);
     expect(response.body.services[0].name).toBe("Dinner Reservation");
+  });
+
+  test("POST /bookings creates a booking successfully", async () => {
+    const serviceId = "6adb1a9a65a837afb7bba721";
+
+    Service.findById.mockResolvedValue({
+      _id: serviceId,
+      name: "Dinner Reservation",
+      availableSlots: ["18:00", "18:30", "19:00"],
+    });
+
+    const bookingData = {
+      service: serviceId,
+      date: "2026-11-15",
+      slot: "18:00",
+      customerName: "Ayesha Khan",
+      customerEmail: "ayesha@example.com",
+      customerPhone: "03001234567",
+    };
+
+    Booking.create.mockResolvedValue({
+      _id: "6adb1a9a65a837afb7bba722",
+      ...bookingData,
+    });
+
+    const response = await request(app)
+      .post("/bookings")
+      .send(bookingData);
+
+    expect(response.status).toBe(201);
+    expect(response.body.success).toBe(true);
+    expect(Booking.create).toHaveBeenCalledTimes(1);
+
+const createdBooking = Booking.create.mock.calls[0][0];
+
+expect(createdBooking).toMatchObject({
+  service: bookingData.service,
+  slot: bookingData.slot,
+  customerName: bookingData.customerName,
+  customerEmail: bookingData.customerEmail,
+  customerPhone: bookingData.customerPhone,
+});
+
+expect(createdBooking.date).toEqual(
+  new Date("2026-11-15T00:00:00.000Z")
+);
   });
 
   test("POST /bookings rejects missing required fields", async () => {
