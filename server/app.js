@@ -9,9 +9,9 @@ const routes = require("./routes");
 // Do not disclose Express through the X-Powered-By header.
 app.disable("x-powered-by");
 
-// Allow only the configured frontend origin.
+// Allow requests only from the configured frontend origin.
 const allowedOrigin =
-  process.env.CLIENT_URL || "http://localhost:3000";
+  process.env.CLIENT_URL || "http://localhost:5173";
 
 app.use(
   cors({
