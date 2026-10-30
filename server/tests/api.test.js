@@ -35,6 +35,58 @@ describe("Spice Route Booking API", () => {
     expect(response.body.services[0].name).toBe("Dinner Reservation");
   });
 
+
+    test("GET /services/:serviceId/availability returns only unbooked slots", async () => {
+    const serviceId = "6adb1a9a65a837afb7bba721";
+
+    Service.findById.mockResolvedValue({
+      _id: serviceId,
+      name: "Dinner Reservation",
+      availableSlots: ["18:00", "18:30", "19:00"],
+    });
+
+    Booking.find.mockReturnValue({
+      select: jest.fn().mockResolvedValue([
+        { slot: "18:30" },
+      ]),
+    });
+
+    const response = await request(app).get(
+      `/services/${serviceId}/availability?date=2026-11-15`
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.availableSlots).toEqual([
+      "18:00",
+      "19:00",
+    ]);
+  });
+
+  test("GET /services/:serviceId/availability rejects an invalid date", async () => {
+    const response = await request(app).get(
+      "/services/6adb1a9a65a837afb7bba721/availability?date=invalid"
+    );
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(Service.findById).not.toHaveBeenCalled();
+    expect(Booking.find).not.toHaveBeenCalled();
+  });
+
+  test("GET /services/:serviceId/availability returns 404 for an unknown service", async () => {
+    Service.findById.mockResolvedValue(null);
+
+    const response = await request(app).get(
+      "/services/6adb1a9a65a837afb7bba721/availability?date=2026-11-15"
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.body.success).toBe(false);
+    expect(response.body.message).toBe("Service not found.");
+  });
+
+  
   test("POST /bookings creates a booking successfully", async () => {
     const serviceId = "6adb1a9a65a837afb7bba721";
 

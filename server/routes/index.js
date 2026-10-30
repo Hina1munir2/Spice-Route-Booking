@@ -21,6 +21,69 @@ router.get("/services", async (req, res, next) => {
   }
 });
 
+
+// GET /services/:serviceId/availability?date=YYYY-MM-DD
+router.get("/services/:serviceId/availability", async (req, res, next) => {
+  try {
+    const { serviceId } = req.params;
+    const { date } = req.query;
+
+    if (!mongoose.isValidObjectId(serviceId)) {
+      return res.status(400).json({
+        success: false,
+        message: "The service ID is invalid.",
+      });
+    }
+
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid date in YYYY-MM-DD format.",
+      });
+    }
+
+    const bookingDate = new Date(`${date}T00:00:00.000Z`);
+
+    if (
+      Number.isNaN(bookingDate.getTime()) ||
+      bookingDate.toISOString().slice(0, 10) !== date
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid calendar date.",
+      });
+    }
+
+    const selectedService = await Service.findById(serviceId);
+
+    if (!selectedService) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found.",
+      });
+    }
+
+    const bookings = await Booking.find({
+      service: serviceId,
+      date: bookingDate,
+    }).select("slot -_id");
+
+    const bookedSlots = bookings.map((booking) => booking.slot);
+    const availableSlots = selectedService.availableSlots.filter(
+      (slot) => !bookedSlots.includes(slot)
+    );
+
+    return res.status(200).json({
+      success: true,
+      date,
+      service: selectedService.name,
+      availableSlots,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /bookings
 router.post("/bookings", async (req, res, next) => {
   try {
