@@ -3,7 +3,14 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+
 const router = express.Router();
+
+const Booking = require("../models/Booking");
+const {
+  authenticateToken,
+  authorizeRoles,
+} = require("../middleware/auth");
 
 // Create a JWT for an authenticated user.
 const generateToken = (user) => {
@@ -133,6 +140,20 @@ router.post("/login", async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// GET /auth/me
+// Return the currently authenticated user's details.
+router.get("/me", authenticateToken, (req, res) => {
+  res.status(200).json({
+    success: true,
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+    },
+  });
 });
 
 module.exports = router;
