@@ -1,3 +1,4 @@
+
 import axios from "axios";
 
 const api = axios.create({
@@ -7,13 +8,27 @@ const api = axios.create({
   },
 });
 
+// Automatically attach JWT token to API requests.
+api.interceptors.request.use(
+  (config) => {
+    const token = sessionStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // Get all restaurant services.
 export const getServices = async () => {
   const response = await api.get("/services");
   return response.data.services;
 };
 
-// Get available slots for a selected service and date.
+// Get available booking slots.
 export const getAvailableSlots = async (serviceId, date) => {
   const response = await api.get(
     `/services/${serviceId}/availability`,
@@ -25,7 +40,7 @@ export const getAvailableSlots = async (serviceId, date) => {
   return response.data.availableSlots;
 };
 
-// Submit a restaurant booking.
+// Create a restaurant booking.
 export const createBooking = async (bookingData) => {
   const response = await api.post("/bookings", bookingData);
   return response.data;
