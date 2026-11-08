@@ -506,3 +506,229 @@ The completed workflow connects the React frontend with the Express and MongoDB 
 
 The project provides a foundation for future improvements such as table capacity management, booking cancellation, customer authentication, and online payments.
 
+## Task 3: JWT Login for Customers and Staff
+
+### Overview
+
+Task 3 extends the Spice Route Restaurant online booking platform with secure authentication for customers and restaurant staff.
+
+The authentication system allows customers to create accounts and log in, while staff members use a separately created staff account. Role-based authorization protects staff-only API endpoints and prevents customers from accessing staff booking information.
+
+The implementation builds on the existing Express.js, MongoDB, and React application.
+
+### Features Implemented
+
+- **Customer registration:** Customers can register using their name, email address, and password.
+- **Customer login:** Registered customers can log in using their email and password.
+- **Staff login:** Restaurant staff can log in using an account created through a protected setup script.
+- **Password security:** Passwords are hashed using bcrypt before being stored in MongoDB.
+- **JWT authentication:** Successful registration and login return a JSON Web Token.
+- **Protected profile endpoint:** Authenticated users can retrieve their profile.
+- **Role-based authorization:** Only staff accounts can access the staff bookings endpoint.
+- **Frontend authentication:** React login and registration pages connect to the backend authentication API.
+- **Session management:** Authentication information is stored in browser session storage, and users can log out.
+- **Input validation:** Missing fields, invalid email addresses, short passwords, duplicate accounts, and incorrect login credentials are handled with clear error messages.
+
+### Technology Used
+
+| Technology | Purpose |
+|---|---|
+| React | Login and registration interface |
+| Node.js | Backend runtime |
+| Express.js | Authentication API |
+| MongoDB Atlas | User account storage |
+| Mongoose | Database models |
+| bcryptjs | Password hashing |
+| jsonwebtoken | JWT creation and verification |
+| Axios | Frontend API communication |
+| Jest | Automated backend testing |
+| Supertest | HTTP endpoint testing |
+
+### User Roles
+
+The system supports two roles:
+
+| Role | Permissions |
+|---|---|
+| Customer | Register, log in, and access their authenticated profile |
+| Staff | Log in, access their authenticated profile, and retrieve restaurant bookings |
+
+Public registration always creates a customer account. Users cannot assign themselves the staff role through the registration API.
+
+Staff accounts are created separately using the backend setup script.
+
+### API Endpoints
+
+Base URL: `http://localhost:5000`
+
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| POST | `/auth/register` | Public | Register a customer |
+| POST | `/auth/login` | Public | Log in a customer or staff member |
+| GET | `/auth/me` | Authenticated | Retrieve the logged-in user's profile |
+| GET | `/staff/bookings` | Staff only | Retrieve restaurant bookings |
+
+Protected endpoints require a JWT in the Authorization header:
+
+```http
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+### Environment Configuration
+
+Create a `.env` file inside the `server` directory.
+
+Add the following configuration with your own values:
+
+```env
+PORT=5000
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_long_random_secret
+CLIENT_URL=http://localhost:5173
+
+STAFF_NAME=Restaurant Staff
+STAFF_EMAIL=staff@example.com
+STAFF_PASSWORD=your_secure_staff_password
+```
+
+**Important:** Never commit the `.env` file or share your JWT secret, database credentials, or staff password publicly.
+
+### How to Run the Project
+
+#### 1. Start the Backend
+
+Open a terminal:
+
+```powershell
+cd server
+npm install
+npm run dev
+```
+
+The backend runs at:
+
+`http://localhost:5000`
+
+#### 2. Create the Staff Account
+
+Configure the staff details in `server/.env`, then run:
+
+```powershell
+npm run create:staff
+```
+
+The script creates a staff account with the `staff` role. It prevents creating another account with the same email address.
+
+#### 3. Start the Frontend
+
+Open a second terminal from the project root:
+
+```powershell
+cd client
+npm install
+npm run dev
+```
+
+Open the Vite URL:
+
+`http://localhost:5173`
+
+Use the Register page to create a customer account, or the Login page to sign in as a customer or staff member.
+
+### Authentication Workflow
+
+1. A customer submits the registration form.
+2. The backend validates the input and checks whether the email is already registered.
+3. The password is hashed using bcrypt before the account is saved.
+4. The backend returns a JWT after successful registration or login.
+5. The frontend stores the token and user information in session storage.
+6. Axios attaches the token to authenticated API requests.
+7. The authentication middleware verifies the JWT and retrieves the user.
+8. The authorization middleware checks the user's role before allowing access to staff-only endpoints.
+9. Users can log out to clear their current browser session.
+
+### Security and Validation
+
+- Passwords are never stored as plain text.
+- bcrypt uses a cost factor of 12 for password hashing.
+- Passwords must contain at least eight characters.
+- Email addresses are normalized before account creation and login.
+- Duplicate email registration is rejected.
+- Invalid login credentials return an unauthorized response.
+- Missing or invalid JWTs are rejected.
+- Customers attempting to access staff-only routes receive a forbidden response.
+- Staff credentials are configured separately from public registration.
+- JWTs are configured with a seven-day expiration.
+
+### Automated Testing
+
+Backend tests are implemented using Jest and Supertest.
+
+Run the complete test suite from the `server` directory:
+
+```powershell
+npm test -- --runInBand
+```
+
+**Latest test results:**
+
+| Test suite | Tests passed |
+|---|---:|
+| Booking API tests | 8 |
+| Authentication and authorization tests | 13 |
+| **Total** | **21/21** |
+
+Authentication tests cover:
+
+- Successful customer registration.
+- Missing registration fields.
+- Password length validation.
+- Duplicate email registration.
+- Successful customer login.
+- Successful staff login.
+- Incorrect password.
+- Unknown email address.
+- Access to the authenticated profile.
+- Missing authentication token.
+- Customer access denied to staff-only routes.
+- Staff access granted to staff-only routes.
+
+### Manual Testing Checklist
+
+| Test | Expected result |
+|---|---|
+| Register with valid details | Customer account created |
+| Register with an existing email | Clear duplicate-account error |
+| Register with missing fields | Validation error |
+| Register with a short password | Password validation error |
+| Login with correct credentials | Successful login and JWT |
+| Login with incorrect credentials | Unauthorized response |
+| Access `/auth/me` without a token | HTTP 401 |
+| Access `/staff/bookings` without a token | HTTP 401 |
+| Access `/staff/bookings` as a customer | HTTP 403 |
+| Access `/staff/bookings` as staff | HTTP 200 |
+| Log out from the frontend | Session authentication cleared |
+
+### Design Decision and Trade-offs
+
+**Decision: Use JWT authentication with browser session storage.**
+
+JWT was selected because it provides a stateless way to authenticate API requests and works well with the React frontend and Express backend.
+
+The frontend stores the JWT in `sessionStorage`, which keeps the login active across page refreshes within the current browser tab session and clears it when that session ends.
+
+**Trade-off:** Session storage is accessible to JavaScript, so a successful cross-site scripting (XSS) attack could expose the token. For a production deployment, an alternative would be a secure, HttpOnly cookie with appropriate SameSite and CSRF protections.
+
+A separate staff account creation script was also chosen so public registration cannot grant staff privileges.
+
+### Task 3 Scope
+
+This task implements customer and staff authentication, user roles, and staff-only API authorization.
+
+The staff dashboard and additional staff management features are reserved for a later development task.
+
+### Result
+
+Task 3 successfully adds JWT-based authentication to the Spice Route Restaurant booking platform. Customers can register and log in, staff can use separately provisioned accounts, and protected API endpoints enforce role-based access.
+
+The backend currently passes **21 automated tests across two test suites**.
