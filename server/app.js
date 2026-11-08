@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 
 const app = express();
 const routes = require("./routes");
+const authRoutes = require("./routes/auth");
 
 // Do not disclose Express through the X-Powered-By header.
 app.disable("x-powered-by");
@@ -23,6 +24,7 @@ app.use(
 
 app.use(express.json({ limit: "10kb" }));
 app.use("/", routes);
+app.use("/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.status(200).json({

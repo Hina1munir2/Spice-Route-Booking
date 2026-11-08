@@ -3,6 +3,10 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Service = require("../models/Service");
 const Booking = require("../models/Booking");
+const {
+  authenticateToken,
+  authorizeRoles,
+} = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -167,5 +171,28 @@ router.post("/bookings", async (req, res, next) => {
     next(error);
   }
 });
+
+// GET /staff/bookings
+// Only authenticated staff members can view all bookings.
+router.get(
+  "/staff/bookings",
+  authenticateToken,
+  authorizeRoles("staff"),
+  async (req, res, next) => {
+    try {
+      const bookings = await Booking.find()
+        .populate("service", "name duration price")
+        .sort({ date: 1, slot: 1 });
+
+      return res.status(200).json({
+        success: true,
+        count: bookings.length,
+        bookings,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 module.exports = router;
