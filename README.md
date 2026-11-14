@@ -732,3 +732,111 @@ The staff dashboard and additional staff management features are reserved for a 
 Task 3 successfully adds JWT-based authentication to the Spice Route Restaurant booking platform. Customers can register and log in, staff can use separately provisioned accounts, and protected API endpoints enforce role-based access.
 
 The backend currently passes **21 automated tests across two test suites**.
+
+## Task 4: Staff Dashboard and Booking Management
+
+### Overview
+A protected staff dashboard was developed to help restaurant staff manage customer reservations efficiently. Staff members can view bookings, monitor booking statistics, search for specific reservations, filter bookings, and update their statuses.
+
+### Features
+- **Staff-only access:** The dashboard is accessible only to authenticated users with the staff role.
+- **Booking overview:** Displays booking statistics, including total bookings and booking statuses.
+- **Search:** Search bookings by customer name, email, phone number, or service name.
+- **Date filter:** View bookings for a selected date.
+- **Status filter:** Filter bookings by pending, confirmed, completed, or cancelled status.
+- **Status management:** Staff can update a booking's status directly from the dashboard.
+- **User feedback:** Displays loading indicators, error messages, success messages, and an empty state when no bookings are found.
+- **Responsive design:** The dashboard layout adapts to different screen sizes.
+
+### Booking Statuses
+Each booking can have one of the following statuses:
+- `pending` – The booking is awaiting confirmation.
+- `confirmed` – The booking has been confirmed by staff.
+- `completed` – The reservation has been completed.
+- `cancelled` – The reservation has been cancelled.
+
+### API Endpoints
+
+All staff booking management endpoints require a valid JWT token and staff authorization.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/staff/bookings` | Retrieve all bookings |
+| GET | `/staff/bookings?date=YYYY-MM-DD` | Filter bookings by date |
+| GET | `/staff/bookings?status=pending` | Filter bookings by status |
+| PATCH | `/staff/bookings/:bookingId/status` | Update a booking's status |
+
+The status update endpoint accepts a JSON request body:
+
+```json
+{
+  "status": "confirmed"
+}
+```
+
+Invalid booking IDs, unsupported statuses, missing bookings, and unauthorized requests are handled with appropriate error responses.
+
+### Running the Application
+
+**1. Start the backend**
+
+Open a terminal in the project root and run:
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+**2. Start the frontend**
+
+Open a second terminal and run:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+**3. Access the dashboard**
+
+1. Open the frontend URL provided by Vite, usually `http://localhost:5173`.
+2. Log in using an account with the staff role.
+3. Open the Staff Dashboard from the navigation bar.
+4. View, search, filter, and update customer bookings.
+
+A staff account can be created using the backend staff creation script:
+
+```bash
+cd server
+npm run create:staff
+```
+
+Configure the required environment variables before running the application. Do not commit `.env` files or share account credentials.
+
+### Testing
+
+Backend tests can be run with:
+
+```bash
+cd server
+npm test -- --runInBand
+```
+
+The staff booking management tests cover:
+- Retrieving bookings.
+- Filtering bookings by date and status.
+- Rejecting invalid filters.
+- Updating booking statuses.
+- Handling invalid booking IDs and missing bookings.
+- Rejecting unauthorized requests.
+
+The authentication tests also verify that customers cannot access staff-only booking management routes.
+
+### Design Decision and Trade-off
+
+Instead of permanently deleting cancelled bookings, the application updates their status to `cancelled`. This preserves booking history and allows staff to keep track of previous reservations. The trade-off is that cancelled bookings remain stored in the database, so staff may need to use the status filter to focus on active reservations.
+
+### Outcome
+
+Task 4 completes the staff booking management workflow by providing a secure dashboard for viewing, searching, filtering, and updating restaurant reservations.
