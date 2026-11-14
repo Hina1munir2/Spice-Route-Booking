@@ -2,6 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import StaffRoute from "./components/StaffRoute";
 import Home from "./pages/Home";
 import Booking from "./pages/Booking";
 import Confirmation from "./pages/Confirmation";
@@ -10,6 +11,7 @@ import Contact from "./pages/Contact";
 import Menu from "./pages/Menu";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import StaffDashboard from "./pages/StaffDashboard";
 
 import "./App.css";
 
@@ -29,8 +31,18 @@ function App() {
         {/* Authentication pages */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+       <Route element={<StaffRoute />}>
+  <Route
+    path="/staff/dashboard"
+    element={<StaffDashboard />}
+  />
+</Route>
+
       </Routes>
     </>
+
+
   );
 }
 

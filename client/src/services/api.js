@@ -46,4 +46,24 @@ export const createBooking = async (bookingData) => {
   return response.data;
 };
 
+
+// Get staff bookings with optional date and status filters.
+export const getStaffBookings = async (filters = {}) => {
+  const response = await api.get("/staff/bookings", {
+    params: filters,
+  });
+
+  return response.data;
+};
+
+// Update a booking's status.
+export const updateBookingStatus = async (bookingId, status) => {
+  const response = await api.patch(
+    `/staff/bookings/${bookingId}/status`,
+    { status }
+  );
+
+  return response.data;
+};
+
 export default api;

@@ -29,9 +29,15 @@ function Navbar() {
       <div className="nav-auth">
         {user ? (
           <>
-            <span className="nav-user">
-              Welcome, {user.name}
-            </span>
+           <span className="nav-user">
+  Welcome, {user.name}
+</span>
+
+{user.role === "staff" && (
+  <Link to="/staff/dashboard" className="nav-login">
+    Dashboard
+  </Link>
+)}
 
             <button
               type="button"

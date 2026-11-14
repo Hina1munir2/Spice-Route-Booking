@@ -40,8 +40,8 @@ function Login() {
         password: formData.password,
       });
 
-      if (response.user.role === "staff") {
-        navigate("/");
+           if (response.user.role === "staff") {
+        navigate("/staff/dashboard");
       } else {
         navigate("/");
       }
