@@ -50,6 +50,11 @@ const bookingSchema = new mongoose.Schema(
         "Please provide a valid customer phone number.",
       ],
     },
+        status: {
+      type: String,
+      enum: ["pending", "confirmed", "completed", "cancelled"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

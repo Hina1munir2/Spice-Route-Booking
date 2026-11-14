@@ -172,6 +172,7 @@ router.post("/bookings", async (req, res, next) => {
   }
 });
 
+
 // GET /staff/bookings
 // Only authenticated staff members can view all bookings.
 router.get(
@@ -180,7 +181,53 @@ router.get(
   authorizeRoles("staff"),
   async (req, res, next) => {
     try {
-      const bookings = await Booking.find()
+      const { date, status } = req.query;
+      const filter = {};
+
+      // Filter bookings by date.
+      if (date) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide a valid date in YYYY-MM-DD format.",
+          });
+        }
+
+        const bookingDate = new Date(`${date}T00:00:00.000Z`);
+
+        if (
+          Number.isNaN(bookingDate.getTime()) ||
+          bookingDate.toISOString().slice(0, 10) !== date
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide a valid calendar date.",
+          });
+        }
+
+        filter.date = bookingDate;
+      }
+
+      // Filter bookings by status.
+      if (status) {
+        const validStatuses = [
+          "pending",
+          "confirmed",
+          "completed",
+          "cancelled",
+        ];
+
+        if (!validStatuses.includes(status)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid booking status.",
+          });
+        }
+
+        filter.status = status;
+      }
+
+      const bookings = await Booking.find(filter)
         .populate("service", "name duration price")
         .sort({ date: 1, slot: 1 });
 
@@ -194,5 +241,63 @@ router.get(
     }
   }
 );
+
+// PATCH /staff/bookings/:bookingId/status
+// Only authenticated staff members can update booking status.
+router.patch(
+  "/staff/bookings/:bookingId/status",
+  authenticateToken,
+  authorizeRoles("staff"),
+  async (req, res, next) => {
+    try {
+      const { bookingId } = req.params;
+      const { status } = req.body;
+
+      if (!mongoose.isValidObjectId(bookingId)) {
+        return res.status(400).json({
+          success: false,
+          message: "The booking ID is invalid.",
+        });
+      }
+
+      const validStatuses = [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled",
+      ];
+
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please provide a valid status: pending, confirmed, completed, or cancelled.",
+        });
+      }
+
+      const booking = await Booking.findByIdAndUpdate(
+        bookingId,
+        { status },
+        { new: true, runValidators: true }
+      ).populate("service", "name duration price");
+
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found.",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Booking status updated successfully.",
+        booking,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
 
 module.exports = router;
