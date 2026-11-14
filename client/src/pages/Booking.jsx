@@ -45,7 +45,7 @@ function Booking() {
       }
     };
 
-    loadServices();
+    void loadServices();
   }, []);
 
   // Load available slots for the selected service and date
@@ -72,7 +72,7 @@ function Booking() {
       }
     };
 
-    loadSlots();
+    void loadSlots();
   }, [date, serviceId]);
 
   // Submit booking to the backend

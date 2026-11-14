@@ -227,9 +227,11 @@ router.get(
         filter.status = status;
       }
 
-      const bookings = await Booking.find(filter)
-        .populate("service", "name duration price")
-        .sort({ date: 1, slot: 1 });
+     const safeFilter = mongoose.sanitizeFilter(filter);
+
+const bookings = await Booking.find(safeFilter)
+  .populate("service", "name duration price")
+  .sort({ date: 1, slot: 1 });
 
       return res.status(200).json({
         success: true,
