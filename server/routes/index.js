@@ -302,4 +302,147 @@ router.patch(
 );
 
 
+// GET /staff/analytics
+// Only authenticated staff members can view booking analytics.
+router.get(
+  "/staff/analytics",
+  authenticateToken,
+  authorizeRoles("staff"),
+  async (req, res, next) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const filter = {};
+
+      // Validate and apply the starting date.
+      if (startDate) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide startDate in YYYY-MM-DD format.",
+          });
+        }
+
+        const parsedStartDate = new Date(`${startDate}T00:00:00.000Z`);
+
+        if (
+          Number.isNaN(parsedStartDate.getTime()) ||
+          parsedStartDate.toISOString().slice(0, 10) !== startDate
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide a valid startDate.",
+          });
+        }
+
+        filter.date = { $gte: parsedStartDate };
+      }
+
+      // Validate and apply the ending date.
+      if (endDate) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide endDate in YYYY-MM-DD format.",
+          });
+        }
+
+        const parsedEndDate = new Date(`${endDate}T00:00:00.000Z`);
+
+        if (
+          Number.isNaN(parsedEndDate.getTime()) ||
+          parsedEndDate.toISOString().slice(0, 10) !== endDate
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: "Please provide a valid endDate.",
+          });
+        }
+
+        filter.date = {
+          ...filter.date,
+          $lte: parsedEndDate,
+        };
+      }
+
+      // Reject a date range where the start is after the end.
+      if (
+        startDate &&
+        endDate &&
+        new Date(`${startDate}T00:00:00.000Z`) >
+          new Date(`${endDate}T00:00:00.000Z`)
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "startDate cannot be after endDate.",
+        });
+      }
+      
+    
+
+     const bookings = await Booking.find(
+  filter,
+  null,
+  { sanitizeFilter: false }
+).populate("service", "name");
+      const totalBookings = bookings.length;
+
+      const statusCounts = {
+        pending: 0,
+        confirmed: 0,
+        completed: 0,
+        cancelled: 0,
+      };
+
+      const dailyBookings = {};
+      const monthlyBookings = {};
+      const serviceCounts = {};
+
+      bookings.forEach((booking) => {
+        // Count bookings by status.
+        if (statusCounts[booking.status] !== undefined) {
+          statusCounts[booking.status]++;
+        }
+
+        // Count bookings by date.
+        const dateKey = booking.date.toISOString().slice(0, 10);
+        dailyBookings[dateKey] = (dailyBookings[dateKey] || 0) + 1;
+
+        // Count bookings by month.
+        const monthKey = dateKey.slice(0, 7);
+        monthlyBookings[monthKey] =
+          (monthlyBookings[monthKey] || 0) + 1;
+
+        // Count bookings by service.
+        const serviceName = booking.service?.name || "Unknown service";
+        serviceCounts[serviceName] =
+          (serviceCounts[serviceName] || 0) + 1;
+      });
+
+      const dailyTrend = Object.entries(dailyBookings)
+        .map(([date, count]) => ({ date, count }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      const monthlyTrend = Object.entries(monthlyBookings)
+        .map(([month, count]) => ({ month, count }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      const popularServices = Object.entries(serviceCounts)
+        .map(([service, count]) => ({ service, count }))
+        .sort((a, b) => b.count - a.count);
+
+      return res.status(200).json({
+        success: true,
+        totalBookings,
+        statusCounts,
+        dailyTrend,
+        monthlyTrend,
+        popularServices,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+
 module.exports = router;

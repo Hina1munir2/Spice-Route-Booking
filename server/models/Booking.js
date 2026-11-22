@@ -50,10 +50,18 @@ const bookingSchema = new mongoose.Schema(
         "Please provide a valid customer phone number.",
       ],
     },
-        status: {
+           status: {
       type: String,
       enum: ["pending", "confirmed", "completed", "cancelled"],
       default: "pending",
+    },
+    reminderSent: {
+      type: Boolean,
+      default: false,
+    },
+    reminderSentAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

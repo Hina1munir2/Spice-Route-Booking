@@ -6,6 +6,12 @@ require("dotenv").config();
 
 const mongoose = require("mongoose");
 const app = require("./app");
+const {
+  verifyEmailConnection,
+} = require("./services/emailService");
+const {
+  startReminderScheduler,
+} = require("./services/reminderService");
 
 const PORT = process.env.PORT || 5000;
 
@@ -21,8 +27,13 @@ async function startServer() {
 
     console.log("MongoDB connected successfully.");
 
+    // Check Gmail connection without preventing the API from starting.
+    await verifyEmailConnection();
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+
+  startReminderScheduler();
     });
   } catch (error) {
     console.error("Failed to start server:", error.message);
