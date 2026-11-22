@@ -840,3 +840,187 @@ Instead of permanently deleting cancelled bookings, the application updates thei
 ### Outcome
 
 Task 4 completes the staff booking management workflow by providing a secure dashboard for viewing, searching, filtering, and updating restaurant reservations.
+
+## Task 5: Reminders and Booking Analytics
+
+### Overview
+
+Task 5 extends the Spice Route Restaurant Booking System with automated booking reminders and booking analytics. These features help restaurant staff reduce missed reservations, monitor booking activity, and understand customer booking trends.
+
+The implementation uses the existing MERN stack and builds on the previous booking system and staff dashboard.
+
+### Features Implemented
+
+#### 1. Automated Booking Reminders
+
+- Integrated **Nodemailer** with Gmail SMTP to send booking reminder emails.
+- Sends reminders approximately 24 hours before confirmed reservations.
+- Uses **Node-Cron** to check for due reminders every 15 minutes.
+- Checks for due reminders when the server starts, allowing eligible reminders to be processed after downtime.
+- Stores `reminderSent` and `reminderSentAt` in each booking to prevent normal repeated reminders.
+- Sends reminders only for confirmed bookings that have not already received one.
+- Does not mark a reminder as sent if email delivery fails.
+
+#### 2. Booking Analytics
+
+Added a protected staff analytics API and integrated analytics into the existing staff dashboard.
+
+The dashboard displays:
+
+- Total number of bookings.
+- Pending, confirmed, completed, and cancelled booking counts.
+- Daily booking trends.
+- Monthly booking trends.
+- Popular restaurant services.
+- Date-range filtering for analytics.
+
+Analytics are calculated from actual booking records stored in MongoDB rather than hardcoded values.
+
+#### 3. Input Validation and Error Handling
+
+- Validates date formats using `YYYY-MM-DD`.
+- Rejects invalid calendar dates.
+- Prevents a start date from being later than the end date.
+- Returns clear error responses for invalid analytics filters.
+- Handles empty booking results by displaying zero counts and empty trend data.
+- Restricts analytics access to authenticated staff members.
+- Handles database and email delivery errors without crashing the reminder scheduler.
+
+### Technologies Used
+
+- React.js
+- Node.js
+- Express.js
+- MongoDB and Mongoose
+- Nodemailer
+- Gmail SMTP
+- Node-Cron
+- Luxon
+- Jest and Supertest
+
+### Environment Configuration
+
+Add the following variables to `server/.env`:
+
+```env
+GMAIL_USER=your-gmail-address
+GMAIL_APP_PASSWORD=your-gmail-app-password
+RESTAURANT_NAME=Spice Route Restaurant
+RESTAURANT_TIMEZONE=Asia/Karachi
+```
+
+**Important:** Use a Gmail App Password rather than your normal Gmail password. Keep the `.env` file private and never commit it to GitHub.
+
+### Running the Project
+
+**1. Start the backend**
+
+```bash
+cd server
+npm install
+npm run dev
+```
+
+The backend connects to MongoDB, verifies the Gmail email service, and starts the reminder scheduler.
+
+**2. Start the frontend**
+
+Open another terminal:
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open the local frontend URL shown in the terminal, usually:
+
+```text
+http://localhost:5173
+```
+
+Log in using a staff account to access the dashboard and analytics.
+
+### API Endpoint
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/staff/analytics` | Retrieves booking analytics |
+| GET | `/staff/analytics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Retrieves analytics for a date range |
+
+The analytics endpoint requires staff authentication through a JWT token.
+
+### How to Check the Features
+
+**Booking reminders**
+
+1. Configure Gmail SMTP credentials in `server/.env`.
+2. Start the backend and confirm that the Gmail connection succeeds.
+3. Create a reservation using a controlled test email address.
+4. Confirm the reservation through the staff dashboard.
+5. Check that the reservation is eligible for a reminder.
+6. The scheduler checks every 15 minutes and processes reminders once their 24-hour reminder time has arrived.
+7. Check the recipient inbox and the backend terminal for the delivery result.
+
+For a quick test, use a confirmed reservation less than 24 hours away but still in the future. The scheduler processes overdue reminders for eligible future reservations.
+
+**Booking analytics**
+
+1. Log in using a staff account.
+2. Open the staff dashboard.
+3. View the analytics summary cards, daily and monthly trends, and popular services.
+4. Apply a start and end date to filter analytics.
+5. Try an invalid date range and verify that a clear validation message is displayed.
+6. Check the dashboard with no matching bookings to verify that empty results are handled correctly.
+
+### Testing
+
+Backend tests are written using Jest and Supertest.
+
+Run the complete backend test suite:
+
+```bash
+cd server
+npm test -- --runInBand
+```
+
+**Latest test results:**
+
+- Test Suites: 5 passed
+- Tests: 44 passed
+- Snapshots: 0
+- All backend test suites passed successfully.
+
+The tests cover booking APIs, authentication, staff booking management, reminder processing, and booking analytics.
+
+Reminder tests include successful reminder processing, reminders becoming due, bookings more than 24 hours away, past bookings, already-reminded bookings, email delivery failures, and database errors.
+
+Analytics tests include successful results, date-range filtering, invalid date formats, invalid calendar dates, incorrect date ranges, empty results, and unauthorized access.
+
+### Sample Restaurant Data
+
+The system uses realistic restaurant booking information, including:
+
+- Restaurant: Spice Route Restaurant
+- Service: Dinner Reservation
+- Example reservation slots: 18:00, 18:30, 19:00, 19:30, and 20:00
+- Example customer names: Ayesha Khan and Ali Ahmed
+- Example booking statuses: Pending, Confirmed, Completed, and Cancelled
+
+Analytics are generated from the bookings stored in the database. For testing, use sample reservations with realistic dates, service names, and controlled test email addresses.
+
+### Design Decision and Trade-off
+
+**Decision: Store reminder information directly in the Booking model.**
+
+Instead of creating a separate reminder collection, the system stores `reminderSent` and `reminderSentAt` with each booking.
+
+**Reason:** Each booking currently requires one 24-hour reminder. Keeping reminder information with the booking makes the implementation simpler and allows the scheduler to identify reminders that still need processing without maintaining another collection.
+
+**Trade-off:** This approach is suitable for the current restaurant booking system, but it provides limited reminder history and is less suitable for multiple reminder types or large-scale distributed processing. A production system with multiple server instances could benefit from a dedicated reminder queue or transactional outbox to improve delivery reliability.
+
+The scheduler also uses an in-process overlap guard. This prevents overlapping checks within one server process, but does not coordinate multiple server instances.
+
+### Task 5 Outcome
+
+Task 5 successfully adds automated email reminders and booking analytics to the Spice Route Restaurant Booking System. Staff can monitor reservation activity through the dashboard, while customers can receive reminders before confirmed reservations. The implementation includes validation, error handling, automated scheduling, and backend tests to improve reliability and maintainability.
