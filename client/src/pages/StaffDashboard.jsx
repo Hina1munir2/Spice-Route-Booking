@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getStaffBookings,
   updateBookingStatus,
+  getStaffAnalytics,
 } from "../services/api";
 
 
@@ -22,6 +23,11 @@ function StaffDashboard() {
   const [updatingId, setUpdatingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+    const [analytics, setAnalytics] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
+  const [analyticsError, setAnalyticsError] = useState("");
+  const [analyticsStartDate, setAnalyticsStartDate] = useState("");
+  const [analyticsEndDate, setAnalyticsEndDate] = useState("");
 
   const loadBookings = useCallback(async () => {
     try {
@@ -45,9 +51,35 @@ function StaffDashboard() {
     }
   }, [dateFilter, statusFilter]);
 
+   const loadAnalytics = useCallback(async () => {
+    try {
+      setAnalyticsLoading(true);
+      setAnalyticsError("");
+
+      const response = await getStaffAnalytics(
+        analyticsStartDate,
+        analyticsEndDate
+      );
+
+      setAnalytics(response);
+    } catch (err) {
+      setAnalyticsError(
+        err.response?.data?.message ||
+          "Unable to load booking analytics. Please try again."
+      );
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [analyticsStartDate, analyticsEndDate]);
+
+
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+    useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const filteredBookings = useMemo(() => {
     const searchText = search.trim().toLowerCase();
@@ -110,6 +142,7 @@ function StaffDashboard() {
     });
   };
 
+
   return (
     <main className="staff-dashboard">
       <section className="staff-dashboard-header">
@@ -161,6 +194,180 @@ function StaffDashboard() {
           <span>Completed</span>
           <strong>{countByStatus("completed")}</strong>
         </article>
+      </section>
+
+      <section className="staff-analytics-section">
+        <div className="staff-panel-heading">
+          <div>
+            <h2>Booking Analytics</h2>
+            <p>Overview of restaurant booking performance.</p>
+          </div>
+        </div>
+
+        <div className="staff-filters">
+          <div className="staff-filter-field">
+            <label htmlFor="analytics-start-date">Start Date</label>
+            <input
+              id="analytics-start-date"
+              type="date"
+              value={analyticsStartDate}
+              max={analyticsEndDate || undefined}
+              onChange={(event) =>
+                setAnalyticsStartDate(event.target.value)
+              }
+            />
+          </div>
+
+          <div className="staff-filter-field">
+            <label htmlFor="analytics-end-date">End Date</label>
+            <input
+              id="analytics-end-date"
+              type="date"
+              value={analyticsEndDate}
+              min={analyticsStartDate || undefined}
+              onChange={(event) =>
+                setAnalyticsEndDate(event.target.value)
+              }
+            />
+          </div>
+
+          <button
+            type="button"
+            className="staff-clear-button"
+            onClick={() => {
+              setAnalyticsStartDate("");
+              setAnalyticsEndDate("");
+            }}
+          >
+            Clear Date Range
+          </button>
+        </div>
+
+        {analyticsLoading ? (
+          <div className="staff-empty-state">
+            Loading booking analytics...
+          </div>
+        ) : analyticsError ? (
+          <div className="staff-message staff-error" role="alert">
+            {analyticsError}
+          </div>
+        ) : analytics ? (
+          <>
+          <div className="staff-stat-grid">
+            <article className="staff-stat-card">
+              <span>Total Bookings</span>
+              <strong>{analytics.totalBookings}</strong>
+            </article>
+
+            <article className="staff-stat-card">
+              <span>Pending</span>
+              <strong>{analytics.statusCounts.pending}</strong>
+            </article>
+
+            <article className="staff-stat-card">
+              <span>Confirmed</span>
+              <strong>{analytics.statusCounts.confirmed}</strong>
+            </article>
+
+            <article className="staff-stat-card">
+              <span>Completed</span>
+              <strong>{analytics.statusCounts.completed}</strong>
+            </article>
+
+            <article className="staff-stat-card">
+              <span>Cancelled</span>
+              <strong>{analytics.statusCounts.cancelled}</strong>
+            </article>
+                   </div>
+
+          <div className="staff-trends-grid">
+            <article className="staff-stat-card">
+              <h3>Daily Booking Trends</h3>
+
+              {analytics.dailyTrend.length === 0 ? (
+                <p>No daily booking data available.</p>
+              ) : (
+                analytics.dailyTrend.map((item) => {
+                  const maxCount = Math.max(
+                    ...analytics.dailyTrend.map((entry) => entry.count),
+                    1
+                  );
+
+                  return (
+                    <div className="staff-trend-item" key={item.date}>
+                      <div className="staff-trend-label">
+                        <span>{item.date}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+
+                      <div className="staff-trend-track">
+                        <div
+                          className="staff-trend-bar"
+                          style={{
+                            width: `${(item.count / maxCount) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+                       </article>
+
+            <article className="staff-stat-card">
+              <h3>Monthly Booking Trends</h3>
+
+              {analytics.monthlyTrend.length === 0 ? (
+                <p>No monthly booking data available.</p>
+              ) : (
+                analytics.monthlyTrend.map((item) => {
+                  const maxCount = Math.max(
+                    ...analytics.monthlyTrend.map(
+                      (entry) => entry.count
+                    ),
+                    1
+                  );
+
+                  return (
+                    <div className="staff-trend-item" key={item.month}>
+                      <div className="staff-trend-label">
+                        <span>{item.month}</span>
+                        <strong>{item.count}</strong>
+                      </div>
+
+                      <div className="staff-trend-track">
+                        <div
+                          className="staff-trend-bar"
+                          style={{
+                            width: `${(item.count / maxCount) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </article>
+
+            <article className="staff-stat-card">
+              <h3>Popular Services</h3>
+
+              {analytics.popularServices.length === 0 ? (
+                <p>No service booking data available.</p>
+              ) : (
+                analytics.popularServices.map((item) => (
+                  <div className="staff-trend-item" key={item.service}>
+                    <div className="staff-trend-label">
+                      <span>{item.service}</span>
+                      <strong>{item.count}</strong>
+                    </div>
+                  </div>
+                ))
+              )}
+            </article>
+          </div>
+          </>
+        ) : null}
       </section>
 
       <section className="staff-bookings-panel">

@@ -66,4 +66,16 @@ export const updateBookingStatus = async (bookingId, status) => {
   return response.data;
 };
 
+// Get staff booking analytics with optional date range filters.
+export const getStaffAnalytics = async (startDate = "", endDate = "") => {
+  const response = await api.get("/staff/analytics", {
+    params: {
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate }),
+    },
+  });
+
+  return response.data;
+};
+
 export default api;
