@@ -1024,3 +1024,81 @@ The scheduler also uses an in-process overlap guard. This prevents overlapping c
 ### Task 5 Outcome
 
 Task 5 successfully adds automated email reminders and booking analytics to the Spice Route Restaurant Booking System. Staff can monitor reservation activity through the dashboard, while customers can receive reminders before confirmed reservations. The implementation includes validation, error handling, automated scheduling, and backend tests to improve reliability and maintainability.
+
+## Task 6: Deployment, Documentation & Handover
+
+### Live Deployment
+
+The Spice Route Restaurant Booking application is deployed on Vercel.
+
+- **Live Website:** https://spice-route-booking-sdfp.vercel.app/
+- **Backend API:** https://spice-route-booking.vercel.app/
+- **Source Code:** https://github.com/Hina1munir2/Spice-Route-Booking
+
+### Deployment Architecture
+
+The application uses two separate Vercel projects connected to the same GitHub repository:
+
+- Frontend: React and Vite (`client` directory).
+- Backend: Node.js and Express (`server` directory).
+- Database: MongoDB Atlas.
+- Frontend-backend communication: REST API with configured CORS.
+- Environment variables are configured through Vercel project settings.
+
+### Completed Features
+
+- Customer registration and login using JWT authentication.
+- Restaurant services and availability checking.
+- Online booking creation and confirmation.
+- Staff authentication and protected dashboard.
+- Booking management and status updates.
+- Booking reminder email service.
+- Booking analytics and reporting.
+- Responsive frontend pages.
+
+### Testing and Verification
+
+- Backend automated tests: 5 test suites, 44 tests passed.
+- Frontend production build completed successfully.
+- Live backend API and MongoDB connection verified.
+- Live customer booking flow tested.
+- Customer and staff authentication tested.
+- Staff dashboard and analytics tested.
+
+### Deployment Decisions and Trade-offs
+
+- Frontend and backend are deployed separately to support independent deployment and configuration.
+- MongoDB connections are cached to support serverless execution.
+- The local reminder scheduler runs every 15 minutes.
+- Vercel Cron is configured for the deployed reminder endpoint. On the Hobby plan, scheduled execution is limited to once per day, so reminders may not be delivered exactly 24 hours before a reservation.
+- Sensitive configuration values are stored as environment variables rather than committed to GitHub.
+
+### Handover and Future Improvements
+
+The main application features have been implemented and deployed. Future improvements could include more frequent production reminder scheduling, image optimization, and more detailed analytics reporting.
+
+## Application Screenshots
+
+### Home Page
+![Spice Route Home Page](docs/screenshots/home.png)
+
+### Menu
+![Restaurant Menu](docs/screenshots/menu.png)
+
+### Customer Booking
+![Booking Page](docs/screenshots/booking.png)
+
+### Booking Confirmation
+![Booking Confirmation](docs/screenshots/confirmation.png)
+
+### Customer Login
+![Customer Login](docs/screenshots/login.png)
+
+### Customer Registration
+![Customer Registration](docs/screenshots/register.png)
+
+### Staff Dashboard
+![Staff Dashboard](docs/screenshots/staffdashboard.png)
+
+### Booking Analytics
+![Booking Analytics](docs/screenshots/analytics.png)
