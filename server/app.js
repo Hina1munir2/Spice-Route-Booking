@@ -2,6 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const connectDB = require("./services/db");
 
 const app = express();
 const routes = require("./routes");
@@ -22,6 +23,23 @@ app.use(
   })
 );
 
+// Ensure MongoDB is connected before handling API requests.
+app.use(async (req, res, next) => {
+  if (process.env.VERCEL !== "1") {
+  return next();
+}
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+
+    res.status(503).json({
+      success: false,
+      message: "Database is temporarily unavailable.",
+    });
+  }
+});
 app.use(express.json({ limit: "10kb" }));
 app.use("/", routes);
 app.use("/auth", authRoutes);
