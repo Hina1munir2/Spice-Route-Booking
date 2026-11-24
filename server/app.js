@@ -3,6 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const connectDB = require("./services/db");
+const {
+  processDueReminders,
+} = require("./services/reminderService");
 
 const app = express();
 const routes = require("./routes");
@@ -52,6 +55,32 @@ app.get("/", (req, res) => {
       mongoose.connection.readyState === 1
         ? "connected"
         : "disconnected",
+  });
+});
+
+// Protected endpoint for Vercel Cron reminder checks.
+app.get("/api/cron/reminders", async (req, res) => {
+  const cronSecret = process.env.CRON_SECRET;
+
+  if (!cronSecret) {
+    return res.status(503).json({
+      success: false,
+      message: "Cron secret is not configured.",
+    });
+  }
+
+  if (req.get("Authorization") !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized.",
+    });
+  }
+
+  await processDueReminders();
+
+  return res.status(200).json({
+    success: true,
+    message: "Reminder check completed.",
   });
 });
 
